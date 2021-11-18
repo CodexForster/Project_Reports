@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="description" content="">
+      <meta name="author" content="Danush Shekar and Harisankar K R">
+      <title>CS460 Project</title>
+      <link rel = "icon" href =  "Images/heavy-ball" type = "image/x-icon"> 
+      <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300&display=swap" rel="stylesheet">
+      <script type="text/javascript" src="http://codecogs.unisa.ac.za/latexit.js"></script>
+      <link rel="stylesheet" href="CSS/normalize.css">
+      <link rel="stylesheet" href="CSS/style.css">
+    </head>
+	<body>
+        <nav>
+            <div class="topic">
+                <h1>Introducing Terms of Higher Moments in Heavy-Ball Optimization</h1>
+            </div><!--.topic div-->
+        </nav>
+        <div class="bg1">
+            <div class="content-area-top">
+                <div class="wrapper">
+                    <h2>
+                        Why Do We Need Optimization Methods?
+                    </h2>
+                    <p>
+                        Machine learning and Artificial Intelligence have become so popular that one can see its applications in almost every field one can think of. How to make these algorithms much more efficient and effective are crucial questions we would like to address. To give an idea of how complex even the simplest of problems can be, let us look at some numbers. The number of parameters in simple and good neural networks tackling the <a href="http://yann.lecun.com/exdb/mnist/" target="blank">MNIST Database</a> using a Convolutional Neural Network (CNN) are in millions. Even typical Neural Networks (NNs) tackling even simpler problems would have its number of parameters in orders of tens of thousands [<a href="#References">5</a>]. The gradient descent explanations one usually encounters online come with a parabola (Fig.1) or a contour representing the loss function with respect to 1 and 2 parameters respectively. We see that as the complexity of the problem increases, the number of calculations required (finding gradients) at each point also increases.
+                    </p>
+                    <figure>
+                        <img src="Images/learning-rate.png" alt="Gradient" style="width: 500px;">
+                        <figcaption>
+                            Fig.1 - Gradient descent for different learning rates (Source: <a href="https://builtin.com/data-science/gradient-descent" target="blank">Built In</a>)
+                        </figcaption>
+                    </figure>
+                    <p>
+                        Instead of looking at how the curve is at each point blind, there are a variety of gradient descent and optimization techniques we can use to tackle such problems. Keep in mind that when we use the term optimization, we do not refer to optimizations like parameter initialisation (like weights in NNs and CNNs), but we refer to optimization methods in gradient descent algorithms. Learning rate is an important hyper-parameter for every algorithm and setting it to a value too low would mean it would take too long for the algorithm to converge to a solution. Setting it to a value too high would result in fluctuations and diverging solutions. Optimization methods are used to find a good solution, fast, along with a good probability that it will converge. With optimization, data is used more effectively and these algorithms help us save a significant amount of time and computational resources. The animation shown below shows the difference between some popular optimization methods and how fast (and accurately) they converge to the minima compared to the others.
+                    </p>
+                    <figure>
+                        <img src="Images/comparision.gif" alt="Optimization" style="width:500px;"> 
+                        <figcaption>
+                            Fig.2 - SGD Optimization in Loss Contour (Source: <a href="https://ruder.io/optimizing-gradient-descent/" target="blank">An overview of gradient descent optimization algorithms</a>)
+                        </figcaption>
+                    </figure>
+                    <p>
+                        As explained in [<a href="#References">9</a>], besides the learning rate, how to avoid the objective function being trapped in infinite numbers of the local minimum is a common challenge. The slope of a saddle point is positive in one direction and negative in another direction, and gradient values in all directions are zero. It is an important problem to escape from these points and algorithms like Nesterov Accelerated Gradient Descent (NAG) come into the picture. Although higher-order methods are more suited, we will see why they aren't used very often when we introduce them later on.
+                    </p>
+                    <p>
+                        Now that we have seen why studies in optimization are important, let us get ourselves introduced to current optimization methods before stating our problem.
+                    </p>
+                </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg1 div-->
+        <div class="bg2">
+            <div class="content-area">
+                <div class="wrapper">
+                    <h2>
+                        Current Optimization Methods
+                    </h2>
+                    <p>
+                        Popular optimization methods can be divided into three categories: first-order optimization methods (represented by the widely used stochastic gradient methods); high-order optimization methods; and heuristic derivative-free optimization methods.
+                    </p>
+                    <p>
+                        Just like we discussed in class, there can be situations where we reach a saddle point in the loss function, there are high-order optimization algorithms to overcome this problem which involves complex calculations (like the inverse of large matrices). As explained in [<a href="#References">9</a>], compared to first-order optimization methods, high-order methods converge at a faster speed in which the curvature information makes the search direction more effective. High-order optimizations attract widespread attention but also face more challenges. Although the convergence of the algorithm can be guaranteed, the computational process is costly and thus rarely used for solving large machine learning problems. For example, computing and storing the full Hessian matrix takes O(n<sup>2</sup>) memory, which is infeasible for high-dimensional functions such as the loss functions of neural networks [<a href="#References">8</a>]. We will not get into high-order optimization, but what we seek to study is the effect of adding additional higher "moment" terms to the heavy-ball optimization. We use "higher moment terms" to avoid confusion with the already-in-use "high-order methods". We will also be diverting from the main problem if one gets into derivative-free optimization methods also. So, let us look into first-order optimization methods and find out where our project comes into the picture among these methods.
+                    </p>
+                    <p>
+                        First-order methods involve methods like Gradient Descent (Normal, stochastic, batch/mini-batch), Nesterov Accelerated Gradient Descent, AdaGrad, and so on. Gradient Descent is explained in more detail in the Additional Resources section. More detailed review of first-order (and high-order) methods can be read at [<a href="#References">1</a>, <a href="#References">7</a>, <a href="#References">10</a>]. In NAG, the update is given by:
+                    </p>
+                    <img style="display: block; margin-left: auto; margin-right: auto;" src="https://latex.codecogs.com/gif.latex?\boxed{x^{k&plus;1}=x^{k}&space;-&space;a&space;\nabla&space;L\left(x^{k}&plus;b\left(x^{k}-x^{k-1}\right)\right)&plus;b\left(x^{k}-x^{k-1}\right)}" title="\boxed{x^{k+1}=x^{k} - a \nabla L\left(x^{k}+b\left(x^{k}-x^{k-1}\right)\right)+b\left(x^{k}-x^{k-1}\right)}" />
+                    <p>
+                        where x is the parameter, k is the iteration number, L is the loss function, a is the learning rate and b is another hyperparameter.
+                    </p>
+                    <p>
+                        The method we look to focus on is the Polyak's Heavy-Ball Optimization Method, whose parameter updates is given by:
+                    </p>
+                    <img style="display: block; margin-left: auto; margin-right: auto;"  src="https://latex.codecogs.com/gif.latex?\boxed{x^{k&plus;1}=x^{k}-a&space;\nabla&space;L\left(x^{k}\right)&plus;b\left(x^{k}-x^{k-1}\right)}" title="\boxed{x^{k+1}=x^{k}-a \nabla L\left(x^{k}\right)+b\left(x^{k}-x^{k-1}\right)}" />
+                    <p>
+                        If observed closely, one can see that NAG and HBO are not governed by the same equations,  yet some sources call either of the algorithms as "Momentum" optimization. To avoid confusion, we will refer to them with their original names.
+                    </p>
+                 </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg2 div-->
+        <div class="bg1">
+            <div class="content-area">
+                <div class="wrapper">
+                    <h2>
+                        Problem Statement and Objectives
+                    </h2>
+                    <p>
+                        We see that there is literature that delves into high-order methods which involve taking higher-order derivatives of the loss function to get more information of the curvature. But when one looks at the parameter-update equation of the HBO, one can realise that there could have been additional higher-order terms of the parameter differences (momentum terms). For instance, we had <img style="margin-bottom:-5px" src="https://latex.codecogs.com/gif.latex?b\left(x^{k}-x^{k-1}\right)" title="b\left(x^{k}-x^{k-1}\right)" />, but why not <img style="margin-bottom:-5px" src="https://latex.codecogs.com/gif.latex?b\left((x^{k})^3-(x^{k-1})^3\right)" title="b\left((x^{k})^3-(x^{k-1})^3\right)" />, and terms with 5<sup>th</sup> power and so on (Why are we not considering even powers?). So this thought got us searching for the algorithms that do this, but according to [<a href="#References">9</a>], up until 2019, there has been no literature on the same. So our project would involve looking into such higher moment terms and look at how they affect the training process in terms of rate of convergence, probability of convergence, etc.
+                    </p>
+                    <p>
+                        We look forward to studying the effects of including a set of terms to the HBO:
+                    </p>
+                    <img style="display: block; margin-left: auto; margin-right: auto;" src="https://latex.codecogs.com/gif.latex?\boxed{b\left((x^{k})^n-(x^{k-1})^n\right)}" title="\boxed{b\left((x^{k})^n-(x^{k-1})^n\right)}" />
+					<br>where n is an odd integer. If time permits, we would also want to look at the addition of terms like:
+                    </p>          
+                    <img style="display: block; margin-left: auto; margin-right: auto;" src="https://latex.codecogs.com/gif.latex?\boxed{b\left(\left(x^{k}-x^{k-1}\right)\right)^n}" title="\boxed{b\left(\left(x^{k}-x^{k-1}\right)\right)^n}" />
+                    <p>
+                        where n is an odd integer. One also has to keep in mind that studying the effect of the addition of the above terms would involve deeper ablative tests to truly show that the positive/negative results obtained are due to addition of these terms only. For example, intuitively one can realise that learning rates that work for HBO might not necessarily work for the addition of 3<sup>rd</sup>-moment terms, because every iteration would go faster when going down the slope, and towards the minima can off-shoot and cause fluctuations.
+                    </p>
+                    <p>
+                        Initially, our project would also involve going through literature to select out problems and architectures used in previous publications in the area. With respect to experimentation, we look forward to making this project an exhaustive one by focussing on one or more benchmark problems (like MNIST, to compare with existing optimization methods), include ablative tests on hyper-parameters (like learning rate, a, b) and parameters, and thus compare how our proposed change fares with existing methods. In the end, we also hope to get an animation like Fig.2 to provide for a more visual end result of our project.
+                    </p>
+                </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg1 div-->
+        <div class="bg2">
+            <div class="content-area">
+                <div class="wrapper">
+                    <h2>
+                        Scope, Feasibility and Work Plan
+                    </h2>
+                    <p>
+                        We will take up the benchmark problems people use to fare their optimization methods against others, but keeping in mind the computational resources we have access to, we might have to restrict our extent of testing to selected problems. Other than this, all tools needed to run the experiments are present and accessible (all that is needed is a computer with Python libraries and Google Colab access). We have not yet gone into the specifics, but we hope they have not conducted their experiments for too many iterations and large architectures/models. This stems from the fact that we only have access to a basic computer (8-core i7 8th Gen 2.6GHz, 8GB RAM and 1TB HDD) or a Colab alternative (2-core Xeon 2.2GHz, 13GB RAM, ~107GB HDD and a max run-time of 12hrs only).
+                    </p>
+                    <p>
+                        Empirical tests will be done to compare HerBO with other methods. For now, we will look into performance based on terms of both the number of iterations and wall-clock time, but if any other means of comparison comes up, we can perform the same if time permits. As done in [<a href="#References">6</a>], we look to building NNs and study performance in the digit recognition problem (Using MNIST data). The same tests using CNNs would also be done. In our experiments, model choices for experiments will be made that are consistent with previous publications in the area. The architecture for these models are:
+                        <ul>
+                            <li>
+                                A Neural network model with two fully connected hidden layers with 1000 hidden units each and ReLU activation are used for this experiment with mini-batches of size 128.
+                            </li>
+                            <li>
+                                Our CNN architecture has three alternating stages of 5x5 convolution filters and 3x3 max pooling with a stride of 2 that are followed by a fully connected layer of 1000 rectified linear hidden units (ReLU’s). The input images are pre-processed by whitening, and dropout noise is applied to the input layer and fully connected layer. The minibatch size is also set to 128 similar to previous experiments.
+                            </li>
+                        </ul>
+                    </p>
+                    <p>
+                        We currently have plans for executing this project in 3 phases. The first phase involves looking at as much as literature we can to gather information regarding what problems they looked at and what architecture they built to solve those problems to test how good their method was. The second phase involves coding the architecture (which mostly would be NNs and CNNs), and most of this is already done (courtesy of <a href="https://github.com/CNN-NISER" target="blank">collaborative work</a> with Dr Subhankar Mishra, Sahel M Iqbal and Chinmay Routray). This phase would also involve bringing in those additional terms and conduct the required experiments. The third phase would involve conducting some ablative tests. The details of the third phase would be more clear after we are done with literature after shortlisting the list of experiments that are feasible for us, given the time and resources.
+                    </p>
+                    <figure>
+                        <img src="Images/work-plan.png" alt="Work Plan" style="width: 700px;">
+                        <figcaption>
+                            Fig.3 - Work Plan
+                        </figcaption>
+                    </figure>
+                 </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg2 div-->
+		<div class="bg1">
+            <div class="content-area">
+                <div class="wrapper">
+                    <h2>
+                        Is the Problem Worth Looking At?
+                    </h2>
+                    <p>
+                        We have limited knowledge of what the outcome of this project would come out to be, but we are hopeful for some positive results, if not, then we would know one direction where we need not search. That said, we need to take a step back and ask ourselves why we are doing this? Why do we need to look for different methods? Yes, these methods will help make our programs faster, saving hours or even days and significant computational resources. But that is only secondary; what we are seeking to gain from this project is to understand the much deeper questions like how do these algorithms work? Why some work and why some don't? We hope to work with numerous algorithms, test them, play with them and thus at the end of it, share our knowledge and experience with rest of the class.
+                    </p>
+                </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg1 div-->
+        <div class="bg2">
+            <div class="content-area">
+                <div class="wrapper">
+                    <h2>
+                        Adam Optimisation
+                    </h2>
+                    <p>
+                        As explained in [<a href="#References">6</a>], Adaptive moment optimisation is an algorithm for first order gradient-based optimisation of stochastic objective functions based on the adaptive estimates of lower-order moments. The Adam optimisation method is very easy to implement, computationally efficient, having little memory requirements, invariant to diagonal rescaling and is well suited for problems that are large in terms of data and parameters. This method has the combined advantages of AdaGrad optimisation, which works well with sparse gradients, and RMSProp method, which works well in on-line and non-stationary settings. In Adam optimisation, the magnitudes of parameter updates are invariant to scaling of the gradient, its stepsizes are approximately bounded by the stepsize hyperparameter, it does not require a stationary object, it works with sparse gradients, and it naturally performs a form of step size annealing. The algorithm is as follows:
+                    </p>
+                    <ul style="list-style-type:none;">
+                        <li><img src="https://latex.codecogs.com/gif.latex?\textbf{Require}:&space;\alpha\text{&space;:&space;Stepsize}" title="\textbf{Require}: \alpha\text{ : Stepsize}" /></li>
+                        <li><img src="https://latex.codecogs.com/gif.latex?\textbf{Require}:&space;\beta_{1},&space;\beta_{2}&space;\in[0,1)\text{&space;:&space;Exponential&space;decay&space;rates}" title="\textbf{Require}: \beta_{1}, \beta_{2} \in[0,1)\text{ : Exponential decay rates}" /></li>
+                        <li><img src="https://latex.codecogs.com/gif.latex?\textbf{Require}:&space;f(\theta)\text{:&space;Stochastic&space;objective&space;function&space;with&space;parameters&space;}\theta" title="\textbf{Require}: f(\theta)\text{: Stochastic objective function with parameters }\theta" /></li>
+                        <li><img src="https://latex.codecogs.com/gif.latex?\textbf{Require}:&space;\theta_{0}:&space;\text{Initial&space;parameter&space;vector}" title="\textbf{Require}: \theta_{0}: \text{Initial parameter vector}" /></li>
+                        <li>&emsp;<img src="https://latex.codecogs.com/gif.latex?\>&space;m_{0}&space;\leftarrow&space;0&space;\text{&space;(Initialize&space;1$^{st}$&space;moment&space;vector)}" title="\> m_{0} \leftarrow 0 \text{ (Initialize 1$^{st}$ moment vector)}" /></li>
+                        <li>&emsp;<img src="https://latex.codecogs.com/gif.latex?\quad&space;v_{0}&space;\leftarrow&space;0\text{&space;(Initialize&space;2$^{nd}$&space;moment&space;vector)}" title="\quad v_{0} \leftarrow 0\text{ (Initialize 2$^{nd}$ moment vector)}" /></li>
+                        <li>&emsp;<img src="https://latex.codecogs.com/gif.latex?t&space;\leftarrow&space;0\text{&space;(Initialize&space;timestep)}" title="t \leftarrow 0\text{ (Initialize timestep)}" /></li>
+                        <li>&emsp;<img src="https://latex.codecogs.com/gif.latex?\textbf{while&space;}&space;\theta_{t}\text{&space;not&space;converged&space;do}" title="\textbf{while } \theta_{t}\text{ not converged do}" /></li>
+                        <li>&emsp;&emsp;<img src="https://latex.codecogs.com/gif.latex?t&space;\leftarrow&space;t&plus;1" title="t \leftarrow t+1" /></li>
+                        <li>&emsp;&emsp;<img src="https://latex.codecogs.com/gif.latex?g_{t}&space;\leftarrow&space;\nabla_{\theta}&space;f_{t}\left(\theta_{t-1}\right)\text{&space;(Get&space;gradients&space;w.r.t.&space;stochastic&space;objective&space;at&space;timestep&space;t)}" title="g_{t} \leftarrow \nabla_{\theta} f_{t}\left(\theta_{t-1}\right)\text{ (Get gradients w.r.t. stochastic objective at timestep t)}" /></li>
+                        <li>&emsp;&emsp;<img src="https://latex.codecogs.com/gif.latex?m_{t}&space;\leftarrow&space;\beta_{1}&space;\cdot&space;m_{t-1}&plus;\left(1-\beta_{1}\right)&space;\cdot&space;g_{t}\text{&space;(Update&space;biased&space;first&space;moment&space;estimate)}" title="m_{t} \leftarrow \beta_{1} \cdot m_{t-1}+\left(1-\beta_{1}\right) \cdot g_{t}\text{ (Update biased first moment estimate)}" /></li>
+                        <li>&emsp;&emsp;<img src="https://latex.codecogs.com/gif.latex?v_{t}&space;\leftarrow&space;\beta_{2}&space;\cdot&space;v_{t-1}&plus;\left(1-\beta_{2}\right)&space;\cdot&space;g_{t}^{2}\text{&space;(Update&space;biased&space;second&space;raw&space;moment&space;estimate)}" title="v_{t} \leftarrow \beta_{2} \cdot v_{t-1}+\left(1-\beta_{2}\right) \cdot g_{t}^{2}\text{ (Update biased second raw moment estimate)}" /></li>
+                        <li>&emsp;&emsp;<img src="https://latex.codecogs.com/gif.latex?\widehat{m}_{t}&space;\leftarrow&space;m_{t}&space;/\left(1-\beta_{1}^{t}\right)\text{&space;(Compute&space;bias-corrected&space;first&space;moment&space;estimate)}" title="\widehat{m}_{t} \leftarrow m_{t} /\left(1-\beta_{1}^{t}\right)\text{ (Compute bias-corrected first moment estimate)}" /></li>
+                        <li>&emsp;&emsp;<img src="https://latex.codecogs.com/gif.latex?\widehat{v}_{t}&space;\leftarrow&space;v_{t}&space;/\left(1-\beta_{2}^{t}\right)\text{&space;(Compute&space;bias-corrected&space;second&space;raw&space;moment&space;estimate)}" title="\widehat{v}_{t} \leftarrow v_{t} /\left(1-\beta_{2}^{t}\right)\text{ (Compute bias-corrected second raw moment estimate)}" /></li>
+                        <li>&emsp;&emsp;<img src="https://latex.codecogs.com/gif.latex?\theta_{t}&space;\leftarrow&space;\theta_{t-1}-\alpha&space;\cdot&space;\hat{m}_{t}&space;/\left(\sqrt{\widehat{v}_{t}}&plus;\epsilon\right)\text{&space;(Update&space;parameters)}" title="\theta_{t} \leftarrow \theta_{t-1}-\alpha \cdot \hat{m}_{t} /\left(\sqrt{\widehat{v}_{t}}+\epsilon\right)\text{ (Update parameters)}" /></li>
+                        <li>&emsp;<img src="https://latex.codecogs.com/gif.latex?\textbf{end&space;while}" title="\textbf{end while}" /></li>
+                        <li>&emsp;<img src="https://latex.codecogs.com/gif.latex?\textbf{return&space;}&space;\theta_{t}\text{&space;(Resulting&space;parameters)}" title="\textbf{return } \theta_{t}\text{ (Resulting parameters)}" /></li>
+                    </ul>
+                    <p>
+                        g<sup>2</sup><sub>t</sub> indicates the element wise square g<sub>t</sub><img src="https://latex.codecogs.com/gif.latex?\odot" title="\odot" />g<sub>t</sub>. 
+                        <br>Good default settings for the tested machine learning problems are &alpha; = 0.001, &beta;<sub>1</sub> = 0.9, &beta;<sub>2</sub> = 0.999 and &straightepsilon; = 10<sup>-8</sup>.  All operations on vectors are element-wise.
+                        <br>To empirically evaluate Adam optimisation method, the authors implemented Logistic Regression, NNs and CNNs in some problems. We will only be discussing the last two here, as we plan to implement only CNNs and NNs models.
+                    </p>
+                    <h3>
+                        Multilayer NN
+                    </h3>
+                    <p>
+                        <br>A neural network model with <b>two fully connected hidden layers</b> with <b>1000 hidden units</b> each and <b>ReLU activation</b> with <b>minibatch size of 128</b> was used to study different optimizers using the <b>standard deterministic cross-entropy objective function</b> with <b>L2 weight decay</b> on the parameters to prevent over-fitting. Stochastic regularization methods, such as dropout is an effective way to prevent overfitting and is often implemented in practice due to their simplicity. The training of multilayer neural networks (which use dropout stochastic regularization) on <b>MNIST images</b> is shown below.
+                    </p>
+                    <figure>
+                        <img src="Images/nn_adam_trainingcost.png" alt="Adam's Training cost NN" style="width: 400px;">
+                        <figcaption>
+                            Fig.4 - (Source: [<a href="#References">6</a>])
+                        </figcaption>
+                    </figure>
+                    <h3>
+                        CNNs
+                    </h3>
+                    <p>
+                        The weight sharing in CNNs results in vastly different gradients in different layers. The CNN architecture has <b>three alternating stages</b> of <b>5x5 convolution filters</b> and <b>3x3 max pooling</b> with <b>stride of 2</b> that is followed by a <b>fully connected layer of 1000 rectified linear hidden units (ReLU’s)</b>. The input image is <b>pre-processed by whitening</b>, and <b>dropout noise</b> is applied to the input layer and fully connected layer. The <b>minibatch size is set to 128</b>; we see Adam and SGD eventually converge considerably faster than Adagrad for CNNs despite Adam and Adagrad making rapid progress lowering the cost in the initial stage of the training as shown in the figure below.
+                    </p>
+                    <figure>
+                        <img src="Images/cnn_adam_trainingcost.png" alt="Adam's Training cost CNN" style="width: 400px;">
+                        <figcaption>
+                            Fig.5 - (Source: [<a href="#References">6</a>])
+                        </figcaption>
+                    </figure>                    
+                </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg2 div-->
+		<div class="bg1">
+            <div class="content-area">
+                <div class="wrapper">
+                    <h2>
+                        AdaGrad
+                    </h2>
+                    <p>
+                        As explained in [<a href="#References">7</a>], AdaGrad is an algorithm for gradient-based optimization that adapts the learning rate to the parameters, that is, performing smaller updates (i.e. low learning rates) for parameters associated with frequently occurring features and larger updates (i.e. high learning rates) for parameters associated with less frequent features.
+						<br>Previously, we used to perform a single update for all parameters &theta; at once as every parameter &theta;<sub>i</sub> used the same learning rate &eta;. But Adagrad uses a different learning rate for every parameter &theta;<sub>i</sub> at every time step t. For brevity, we use g<sub>t</sub> to denote the gradient at time step t. g<sub>t,i</sub> is then the partial derivative of the objective function with respect to the parameter &theta;<sub>i</sub> at time step t:
+						<br><br><img style="display: block; margin-left: auto; margin-right: auto;" src="https://latex.codecogs.com/gif.latex?g_{t,&space;i}=\nabla_{\theta}&space;J\left(\theta_{t,&space;i}\right)" title="g_{t, i}=\nabla_{\theta} J\left(\theta_{t, i}\right)" />
+						<br>If we look at an SGD update for every parameter &theta;<sub>i</sub> at each time step t, it becomes <a href="https://www.codecogs.com/eqnedit.php?latex=\theta_{t&plus;1,&space;i}=\theta_{t,&space;i}-\eta&space;\cdot&space;g_{t,&space;i}" target="_blank"><img style="margin-bottom: -7px" src="https://latex.codecogs.com/gif.latex?\theta_{t&plus;1,&space;i}=\theta_{t,&space;i}-\eta&space;\cdot&space;g_{t,&space;i}" title="\theta_{t+1, i}=\theta_{t, i}-\eta \cdot g_{t, i}" /></a>. The Adagrad algorithm modifies the general learning rate &eta; at each time step t for every parameter &theta;<sub>i</sub> based on the past gradients that were computed for &theta;<sub>i</sub> by:
+						<br><img style="margin-bottom: -20px; display: block; margin-left: auto; margin-right: auto;" src="https://latex.codecogs.com/gif.latex?\theta_{t&plus;1,&space;i}=\theta_{t,&space;i}-\frac{\eta}{\sqrt{G_{t,&space;i&space;i}&plus;\epsilon}}&space;\cdot&space;g_{t,&space;i}" title="\theta_{t+1, i}=\theta_{t, i}-\frac{\eta}{\sqrt{G_{t, i i}+\epsilon}} \cdot g_{t, i}" />
+						<br><br>Here, <img style="margin-bottom: -5px;" src="https://latex.codecogs.com/gif.latex?G_{t}&space;\in&space;\mathbb{R}^{d&space;\times&space;d}" title="G_{t} \in \mathbb{R}^{d \times d}" />  is a diagonal matrix where each diagonal element i,i is the sum of the squares of the gradients with respect to &theta;<sub>i</sub> up to time step t, while &straightepsilon; is a smoothing term that avoids division by zero (usually on the order of 1e−8).
+                    </p>
+					<p>
+						The authors performed experiments with several real world data sets with different characteristics: the <b><a href="http://www.image-net.org/papers/imagenet_cvpr09.pdf" target="blank">ImageNet</a> image database</b>, the <b><a href="https://www.jmlr.org/papers/volume5/lewis04a/lewis04a.pdf" target="blank">RCV1</a> text classification data set</b>, the <b>MNIST</b> multiclass digit recognition problem, and the <b><a href="https://archive.ics.uci.edu/ml/datasets/Census+Income" target="blank">census income</a> data set</b> from the UCI repository. 
+						<br>They approached the ImageNet problem using a <b>discriminative kernel-based model to rank images</b> (see <a href="https://www.researchgate.net/publication/312995014_A_Discriminative_Kernel-based_Model_to_Rank_Images_from_Text_Queries" target="blank">this</a> for more details); the text classification problem using a <b>binary classifier</b>; the MNIST problem using a <b>linear classifier built on top of a Radial-basis-function kernel</b>; and the census income problem had no model specified.
+					</p>
+					<p>
+						Although the list of benchmark problems used are extensive, we will not use the models used in this paper owing to their complexity, we are not confident to be able replicate these models in the limited time frame.
+					</p>
+
+                 </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg1 div-->
+        <div class="bg2">
+            <div class="content-area">
+                <div class="wrapper">
+                    <h2>
+                        AdaDelta Optimisation
+                    </h2>
+                    <p>
+                        As explained in [<a href="#References">11</a>], AdaDelta optimisation improves upon two main drawbacks of the AdaGrad method, namely the need for a manually selected global learning rate and continual decay of learning rates during training. In the AdaGrad optimisation method, the denominator accumulates the squared gradients from each iteration starting at the beginning of training, this accumulated sum continues to grow throughout training, effectively reducing the learning rate on each dimension. After many iterations, this learning rate will become infinitesimally small, nearing zero. By using AdaDelta method this problem can be rectified.
+                    </p>
+                    <p>
+                        Here, instead of accumulating the sum of squared gradients over the total runtime, the duration of past gradients that are accumulated is restricted to a size w instead of t where t is the current iteration like used in AdaGrad. This will cause the windowed accumulation of the denominator of AdaGrad to not lead to infinity and instead become a local estimate using later gradients. Since the storing w previous squared gradients is inefficient, this method implements the accumulation as an exponentially decaying average of squared gradients. Assume at time t this running average is E[g<sup>2</sup>]<sub>t</sub> then it can be computed as: 
+                        <br><br><img style="display: block; margin-left: auto; margin-right: auto;" src="https://latex.codecogs.com/gif.latex?E\left[g^{2}\right]_{t}=\rho&space;E\left[g^{2}\right]_{t-1}&plus;(1-\rho)&space;g_{t}^{2}" title="E\left[g^{2}\right]_{t}=\rho E\left[g^{2}\right]_{t-1}+(1-\rho) g_{t}^{2}" />
+                        <br> Here &rho; is a decay constant similar to that used in the momentum method. Since the square root of this quantity is required in the parameter updates, this effectively becomes the RMS value of previous squared gradients up to time t: 
+                        <br><br><img style="display: block; margin-left: auto; margin-right: auto;" src="https://latex.codecogs.com/gif.latex?\text{RMS}[g]_{t}=\sqrt{\left(&space;E\left[g^{2}\right]_{t}&plus;\epsilon&space;\right)}" title="\text{RMS}[g]_{t}=\sqrt{\left( E\left[g^{2}\right]_{t}+\epsilon \right)}" />
+                        <br> where a constant &straightepsilon; is added to better condition the denominator. The resulting parameter update is then:
+                        <br><br><img style="display: block; margin-left: auto; margin-right: auto;" src="https://latex.codecogs.com/gif.latex?\Delta&space;x_{t}=-\left(\eta&space;/\left(R&space;M&space;S[g]_{t}\right)\right)^{*}&space;g_{t}" title="\Delta x_{t}=-\left(\eta /\left(R M S[g]_{t}\right)\right)^{*} g_{t}" />
+						<br>The algorithm is as follow:
+                    </p>
+                    <ul style="list-style-type:none;">
+                        <li><img src="https://latex.codecogs.com/gif.latex?\textbf{Require&space;}&space;\text{Decay&space;rate&space;}&space;\rho,&space;\text{Constant&space;}&space;\epsilon" title="\textbf{Require } \text{Decay rate } \rho, \text{Constant } \epsilon" /></li>
+                        <li><img src="https://latex.codecogs.com/gif.latex?\textbf{Require&space;}&space;\text{Initial&space;parameter&space;}&space;x_1" title="\textbf{Require } \text{Initial parameter } x_1" /></li>
+                        <li>&emsp;<img src="https://latex.codecogs.com/gif.latex?\text{Initialize&space;accumulation&space;variables&space;}&space;E\left[g^{2}\right]_{0}=0,&space;E\left[\Delta&space;x^{2}\right]_{0}=0" title="\text{Initialize accumulation variables } E\left[g^{2}\right]_{0}=0, E\left[\Delta x^{2}\right]_{0}=0" /></li>
+                        <li>&emsp;<img src="https://latex.codecogs.com/gif.latex?\textbf{for&space;}t=1:&space;T&space;\textbf{&space;do:&space;}&space;\text{Loop&space;over&space;number&space;of&space;updates}" title="\textbf{for }t=1: T \textbf{ do: } \text{Loop over number of updates}" /></li>
+                        <li>&emsp;&emsp;<img src="https://latex.codecogs.com/gif.latex?\begin{aligned}&space;&\text&space;{&space;Compute&space;Gradient:&space;}&space;g_{t}\\&space;&\text&space;{&space;Accumulate&space;Gradient:&space;}&space;E\left[g^{2}\right]_{t}=\rho&space;E\left[g^{2}\right]_{t-1}&plus;(1-\rho)&space;g_{t}^{2}\\&space;&\text&space;{&space;Compute&space;Update:&space;}&space;\Delta&space;x_{t}=-\frac{\operatorname{RMS}[\Delta&space;x]_{t-1}}{\operatorname{RMS}[g]&space;t}&space;g_{t}\\&space;&\text&space;{&space;Accumulate&space;Updates:&space;}&space;E\left[\Delta&space;x^{2}\right]_{t}=\rho&space;E\left[\Delta&space;x^{2}\right]_{t-1}&plus;(1-\rho)&space;\Delta&space;x_{t}^{2}\\&space;&\text&space;{&space;Apply&space;Update:&space;}&space;x_{t&plus;1}=x_{t}&plus;\Delta&space;x_{t}&space;\end{aligned}" title="\begin{aligned} &\text { Compute Gradient: } g_{t}\\ &\text { Accumulate Gradient: } E\left[g^{2}\right]_{t}=\rho E\left[g^{2}\right]_{t-1}+(1-\rho) g_{t}^{2}\\ &\text { Compute Update: } \Delta x_{t}=-\frac{\operatorname{RMS}[\Delta x]_{t-1}}{\operatorname{RMS}[g] t} g_{t}\\ &\text { Accumulate Updates: } E\left[\Delta x^{2}\right]_{t}=\rho E\left[\Delta x^{2}\right]_{t-1}+(1-\rho) \Delta x_{t}^{2}\\ &\text { Apply Update: } x_{t+1}=x_{t}+\Delta x_{t} \end{aligned}" /></li>
+                        <li>&emsp;<img src="https://latex.codecogs.com/gif.latex?\textbf{end&space;for}" title="\textbf{end for}" /></li>
+                    </ul>
+                    <p>
+                        The optimization method is compared against SGD, Momentum, AdaGrad, and AdaDelta in a supervised fashion to minimize the cross entropy objective between the network output and ground truth labels. A neural network is trained on the <b>MNIST handwritten digit classification task</b>. It is trained with <b>tanh nonlinearities</b> and <b>500 hidden units in the first layer</b> followed by <b>300 hidden units in the second layer</b>, with the final <b>softmax output layer</b> on top and <b>mini-batches of 100 images</b> per batch for <b>6 epochs</b> through the training set. Setting the hyperparameters to &straightepsilon; = 1e−6 and &rho; = 0.95 a test set error of 2.00% can be achieved [<a href="#References">11</a>].
+                    </p>
+                    <p>
+                        <br><img style="  display: block; margin-left: auto; margin-right: auto;" src="https://latex.codecogs.com/gif.latex?\begin{array}{|c|c|c|c|}&space;\hline&space;&&space;\text&space;{&space;SGD&space;}&space;&&space;\text&space;{&space;Momentum&space;}&space;&&space;\text&space;{&space;AdaGrad&space;}&space;\\&space;\hline&space;\epsilon=1&space;e^{0}&space;&&space;\mathbf{2&space;.&space;2&space;6&space;\%}&space;&&space;89.68&space;\%&space;&&space;43.76&space;\%&space;\\&space;\hline&space;\epsilon=1&space;e^{-1}&space;&&space;2.51&space;\%&space;&&space;\mathbf{2&space;.&space;0&space;3&space;\%}&space;&&space;2.82&space;\%&space;\\&space;\hline&space;\epsilon=1&space;e^{-2}&space;&&space;7.02&space;\%&space;&&space;2.68&space;\%&space;&&space;\mathbf{1&space;.&space;7&space;9}&space;\%&space;\\&space;\hline&space;\epsilon=1&space;e^{-3}&space;&&space;17.01&space;\%&space;&&space;6.98&space;\%&space;&&space;5.21&space;\%&space;\\&space;\hline&space;\epsilon=1&space;e^{-4}&space;&&space;58.10&space;\%&space;&&space;16.98&space;\%&space;&&space;12.59&space;\%&space;\\&space;\hline&space;\end{array}" title="\begin{array}{|c|c|c|c|} \hline & \text { SGD } & \text { Momentum } & \text { AdaGrad } \\ \hline \epsilon=1 e^{0} & \mathbf{2 . 2 6 \%} & 89.68 \% & 43.76 \% \\ \hline \epsilon=1 e^{-1} & 2.51 \% & \mathbf{2 . 0 3 \%} & 2.82 \% \\ \hline \epsilon=1 e^{-2} & 7.02 \% & 2.68 \% & \mathbf{1 . 7 9} \% \\ \hline \epsilon=1 e^{-3} & 17.01 \% & 6.98 \% & 5.21 \% \\ \hline \epsilon=1 e^{-4} & 58.10 \% & 16.98 \% & 12.59 \% \\ \hline \end{array}" />
+                        <br>The table above shows MNIST test error rates after 6 epochs of training for various hyperparameter settings using SGD, Momentum,and AdaGrad whereas the table below shows MNIST test error rate after 6 epochs for various hyperparameter settings using AdaDelta [<a href="#References">11</a>].
+                        <br><br><img style="  display: block; margin-left: auto; margin-right: auto;" src="https://latex.codecogs.com/gif.latex?\centering&space;\begin{array}{|c|c|c|c|}&space;\hline&space;&&space;\rho=0.9&space;&&space;\rho=0.95&space;&&space;\rho=0.99&space;\\&space;\hline&space;\epsilon=1&space;e^{-2}&space;&&space;2.59&space;\%&space;&&space;2.58&space;\%&space;&&space;2.32&space;\%&space;\\&space;\hline&space;\epsilon=1&space;e^{-4}&space;&&space;2.05&space;\%&space;&&space;1.99&space;\%&space;&&space;2.28&space;\%&space;\\&space;\hline&space;\epsilon=1&space;e^{-6}&space;&&space;1.90&space;\%&space;&&space;\mathbf{1&space;.&space;8&space;3&space;\%}&space;&&space;2.05&space;\%&space;\\&space;\hline&space;\epsilon=1&space;e^{-8}&space;&&space;2.29&space;\%&space;&&space;2.13&space;\%&space;&&space;2.00&space;\%&space;\\&space;\hline&space;\end{array}" title="\centering \begin{array}{|c|c|c|c|} \hline & \rho=0.9 & \rho=0.95 & \rho=0.99 \\ \hline \epsilon=1 e^{-2} & 2.59 \% & 2.58 \% & 2.32 \% \\ \hline \epsilon=1 e^{-4} & 2.05 \% & 1.99 \% & 2.28 \% \\ \hline \epsilon=1 e^{-6} & 1.90 \% & \mathbf{1 . 8 3 \%} & 2.05 \% \\ \hline \epsilon=1 e^{-8} & 2.29 \% & 2.13 \% & 2.00 \% \\ \hline \end{array}" />
+                    </p>
+                    <p>
+                        To better understand various methods of convergence, the neural network is trained with 500 hidden units in the first layer, 300 hidden units in the second layer and rectified linear activation functions in both layers for 50 epochs. It is seen that rectified linear units perform more efficiently in practice than tanh, their non-saturating nature further tests each of the methods at coping with large variations of activations and gradients.
+                    </p>
+                    <figure>
+                        <img src="Images/nn_adadelta_traingcost.png" alt="AdaDelta's Training cost NN" style="width: 400px;">
+                        <figcaption>
+                            Fig.6 - Comparison of learning rate methods on MNIST digit classification for 50 epochs (Source: [<a href="#References">11</a>])
+                        </figcaption>
+                    </figure>
+                    <p>
+                        In the above figure SGD, Momentum, AdaGrad, and AdaDelta are compared in optimizing the test set errors. The SGD method has worst performance, but by adding the momentum term to it significantly improves performance. AdaGrad performs well for the first 10 epochs of training but it slows down considerably due to the accumulation of the denominator which continually increases. AdaDelta matches the fast initial convergence of AdaGrad while continuing to reduce the test error, converging near the best performance which occurs with Momentum.
+                    </p>                
+                </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg2 div-->
+		<div class="bg1">
+            <div class="content-area">
+                <div class="wrapper">
+                    <h2>
+                        What Benchmark Problems Will We Tackle and How?
+                    </h2>
+                    <p>
+						Since we removed the experiments conducted in AdaGrad, we now only have Adam and AdaDelta to choose from. Both optimisers tested their performance on the MNIST Database. Adam used a NN and a CNN, while AdaDelta used only a NN. 
+						<br>Our goal is to code a Convolutional Neural network used in the Adam paper and then code the Neural Network in one of these configurations and tackle the MNIST problem for both. 
+						<br>If we look at the NN architecture used in AdaDelta, the number of epochs they trained with is low, and they used a mini-batch size of 100; whereas in practice, it is advised to tune mini-batch size to an aspect of the computational architecture on which the implementation is being executed. For example, a power of 2 that fits the memory requirements of the GPU or CPU hardware like 32, 64, 128, 256, and so on.
+						<br>Since both NN architectures were tested and used, we are left to choose between the two of them randomly, but owing to the above stated flaws in AdaDelta, we have decided to go ahead with the NN architecture used in Adam and look forward to building the same.
+					</p>
+                 </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg1 div-->
+        <div class="bg2">
+            <div class="content-area">
+                <div class="wrapper">
+                    <h2>
+                        Adopted Methodology, Results and Inferences
+                    </h2>
+                    <h3>Architecture, Computer Specs and Progress Outline</h3>
+                    <p>
+                        Please note that the program we have written is in its initial stages, and yet to be optimised to run faster and take up lesser computations compared to the established libraries like Tensorflow and PyTorch. After giving thought into how much time it would take to test/train for a given architecture, we considered having a simpler version of the CNN architecture used in the Adam paper for the MNIST problem.
+                        For all our tests we used 1 convolutional layer, 1 max-pooling layer and 1 fully-connected layer. The convolutional layer had 10 filters with a receptive field of 5 units and convolving at a stride length of 1 unit, pooling layer stride length of 2 units and 10 nodes in the fully connected layer. We used a learning rate of 0.05. We used the ReLU function as our activation function and a cross-entropy loss (Softmax Classifier) as our loss function.
+                        We used Google Colab to run all our codes and the specs of this computer is a 2-core Xeon 2.2GHz processor, a 13GB RAM and approximately a 107GB HDD.
+                    </p>
+                    <figure>
+                        <img src="Images/timeline.png" alt="Project Timeline" style="width: 1100px;">
+                        <figcaption>
+                            Fig.7 - Source: <a href="https://www.officetimeline.com/" target="blank">Office Timeline</a>
+                        </figcaption>
+                    </figure>
+                    <h3>Class I of Experiments, Subsequent Results</h3>
+                    <p>
+                        The first 2 weeks involved setting up all algorithms and running once for a sample dataset to see if everything is working. This training and testing dataset was set to 2560 images, and the training was done for 5 epochs. From the results, we realised that we needed to set up the number of epochs to 10 to get a better idea of convergence to a minima. The results of the same are depicted in Fig.8. Since we are using a mini-batch size of 128 in some of the algorithms, we set the training size to a multiple of 128 for all runs. The "MINST_via_CNN_old_train_test.ipynb" file in our GitHub repo contains the source code and the results for multiple algorithms, namely Stochastic Gradient Descent (SGD), Mini-Batch Gradient Descent (MBGD), HerBo (for MBGD) and Adam (for MBGD and SGD) for the MNIST problem.
+                        The results also have the testing accuracy after every epoch. We see that the rate of convergence for Adam MBGD > MBGD > HerBo MBGD > Plain SGD. Please NOTE that there is an error that comes in the SGD part after the 8th epoch. This occurred due to some parameter shooting to a large number, so for SGD, we have results until 8 epochs only.
+                    </p>
+                    <figure>
+                        <img src="Images/comparision1.png" alt="HerBo Comparision 1" style="width: 600px; border-radius: 40px;">
+                        <figcaption>
+                            Fig.8 - Comparision of HerBo with other existing algorithms (We used a training and testing size of 2560 images)
+                        </figcaption>
+                    </figure>
+                    <h3>Class II of Experiments, Subsequent Results</h3>
+                    <p>
+                        Each run (10 epochs) of the previous class of experiments took about 2-3 hours to complete which means that every curve corresponding to an algorithm in Fig.8 took 2-3 hours to produce. We see that it is not computationally feasible for us to train with all 60,000 MNIST images, 2560 images are the limit of what we can handle, but we still had to select a training dataset that has a good representation of all classes and not account to any under/over-generalisation. To solve this, we calculated the percentage of examples in each class in the original MNIST training set and maintained the same values in our smaller training dataset. Eg: 11.24% of the original MNIST dataset were 1s. So 11.24% of 2560 images of our training set are also 1s. For the testing set, we selected 260 images from the MNIST testing dataset. We will refer to this training (+ testing) dataset as the inclusive dataset. And we ran this for all the algorithms we are interested in. The source codes and results of them are in the file named "MINST_via_CNN_shrinked_train.ipynb" in our GitHub repo.
+                        The plot of the accuracy scores is as shown in Fig.9.
+                        One could ask why not 10% from each class in our small training dataset? This is a valid argument but all papers are based on the official 60,000 training images and the original dataset does not have an equal number of images for each class. Since the benchmark training dataset is the same, we thought it would make more sense to keep the same distribution and not an equalised one.
+                    </p>
+                    <figure>
+                        <img src="Images/comparision2.png" alt="HerBo Comparision 2" style="width: 600px; border-radius: 40px;">
+                        <figcaption>
+                            Fig.9 - Comparision of HerBo with other existing algorithms (For the inclusive training and testing dataset)
+                        </figcaption>
+                    </figure>
+                    <p>
+                        Note that each run (10 epochs) took about 2-3 hours just like the previous step. We see that HerBo performs similar to MBGD, and is better than the other algorithms. We also need to keep in mind the drop in accuracy in the later epochs. We will get back to this after discussing our next result.
+                    </p>
+                    <h3>Class III of Experiments, Subsequent Results</h3>
+                    <p>
+                        After a discussion with Dr. Subhankar, we decided to drop the ablative tests that were to be performed in week 5 and decided to go ahead with running better tests by performing a 5-fold cross-validation on a dataset of size 3200 images. This dataset was made similar to how we made the inclusive dataset. Each fold had the training process run for 10 epochs.
+                    </p>
+                    <figure>
+                        <img src="Images/meme1.jpg" alt="HerBo Meme 1" style="width: 400px; border-radius: 40px;">
+                        <figcaption>
+                            (Image Source: <a href="https://imgflip.com/memegenerator" target="blank">imgflip</a>)
+                        </figcaption>
+                    </figure>
+                    <p>
+                        We conducted 5-fold cross-validation experiments for different values of the hyperparameter 'b' in the HerBo algorithm for moment 3 terms (i.e <img src="https://latex.codecogs.com/gif.latex?b\left((x^{k})^3-(x^{k-1})^3\right)" style="margin-bottom:-5px" title="b\left((x^{k})^3-(x^{k-1})^3\right)" />). We also ran the cross-validation algorithm on MBGD, this combined with Fig.9 will give us a good idea of how HerBo works compared to other algorithms. The training dataset size was 2560 images, the testing dataset size was 640 images and the mini-batch size was set to 128. Results and codes for these configurations are in the "HerBo Outputs" folder in our GitHub repo.
+                    </p>
+                    <p>
+                        Please note that one run of a 5-fold cross-validation (training of 10 epochs for each fold), took about 12-13 hours to finish! There were also times when it got disconnected and had to start anew or continue over from the paused epoch. These are the cases where we had to separate the python file into multiple parts. Choosing the values for hyperparameter b involved in the addition of higher moment terms to explicitly depict the influence the higher moment terms in HerBO was also laborious. By 20th November we culminated the results we had obtained until then, and the plots obtained for different b values were all exactly the same. After going into every line of the code, we found a mistake that is trivial, but yet non-trivial at the same time. We had to go to the level of how array copies are made in Python (involving shallow and deep copies) to correct the mistake we made. After making the required corrections, we plotted accuracy scores for values of b ranging from values 0.001 to 25 to understand their influence on accuracy in Fig.10.
+                    </p>
+                    <figure>
+                        <img src="Images/comparision3.png" alt="HerBo Comparision 3" style="width: 1100px; border-radius: 40px;">
+                        <figcaption>
+                            Fig.10 - Comparision of accuracy for different b-values in HerBo
+                        </figcaption>
+                    </figure>
+                    <h3>Inferences and Final Remarks</h3>
+                    All the results that we have obtained are for experiments conducted on the same grounds. The weight initialisations were the same (using random seed), the train/test data were the same, etc; hence the different models in any one of the 3 plots can be compared with each other on the same grounds. As we evolved through experiments, we can see that efforts were put into making it a wholesome and extensive set of experiments. Fig.9 essentially compares HerBo with other pre-existing/established algorithms. 
+                    We see that our model is similar to MBGD but accuracy starts to drop towards the later epochs. But HerBo still does much better in the initial epochs compared to other algorithms. While saying this, we also need to keep in mind that although the data selected might be good, running it through a cross-validation process will make it more concrete. We were not able to do cross-validation for all algorithms due to time constraints, but we were able to do it for MBGD and different b values of HerBo. Since we know how HerBo and MBGD compare with Adam, SGD and Adam + SGD, running for MBGD alone and comparing it to different b values gives us a rough idea of how our model would perform compared to other algorithms. 
+                    This way we can save on the time we need to run cross-validation on other algorithms. As we see in Fig.10, MBGD crushed our hopes to make our algorithm effective because we see that accuracy of our algorithm drops after the first few epochs for all values of b we have run tests for. But an important point to observe is that after the first epoch, our algorithm has higher accuracy than MBGD for high b-values. So the only practical use we see that our algorithm has is when one needs a boost of a small percent in the accuracy for some epoch. One can use our algorithm (for one epoch) for a headstart in optimising and then switch to another algorithm for a stable convergence to the minima.			
+                    <p>
+                        In the given timeframe, we were not able to run experiments for different powers and higher moments or experiments on Neural Networks. There might be other areas of experiments we may have looked over, but for the values and moment orders we covered, our model did not work like how we expected it would. As explained, it is limited to a one-off use. There are possibilities that this algorithm could be put to use in some other settings or some sub-class of problems and we hope someone can carry this line of study in the future. Unlike Adam, SGD, MBGD, which work on almost all classes of problems and settings, HerBo did not. But we did learn a lot of things through this project and we thank Dr. Subhankar Mishra for giving us the opportunity and time to do so. We also thank Sahel Iqbal and Chinmay Routray for allowing us to use parts of the code they contributed to. We would like to thank the CS460 class of 2020 for their time to hear our story of this journey.
+                    </p>
+                 </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg2 div-->
+        <div class="bg1">
+            <div class="content-area">
+                <div class="wrapper">
+                    <h2>
+                        Primer
+                    </h2>
+                    <p>
+                        We must have a basic understanding of loss functions, basic optimization methods (like gradient descent) before jumping into what our project is about and how it works.
+                    </p>
+                    <h3>
+                        Score and Loss Functions
+                    </h3>
+                    <p>
+                        In machine learning, scoring is the process of generating values based on a trained model, given some new input data. A function which helps us to map the raw data to class score is defined as Score function. When we use a model developed with training data to predict the output values for new data, we generally refer to it as 'scoring new data', rather than predicting.
+                    </p>
+                    <p>
+                        The loss function is used to represent the agreements or disagreements between the predicted output scores and the ground truth labels, i.e. if the predicted scores deviate too much from the truth labels then the loss function will output a very large number. Or as explained in [<a href="#References">2</a>] in simpler terms, the loss function quantifies our unhappiness with predictions on the training set.
+                    </p>
+                    <p>
+                        The value of parameters W that produced predictions for examples <img style="margin-bottom:-3px" src="https://latex.codecogs.com/gif.latex?\{x_i\}" title="\{x_i\}" /> consistent with their ground truth labels <img style="margin-bottom:-3px" src="https://latex.codecogs.com/gif.latex?\{y_i\}" title="\{y_i\}" /> will lead to minimum loss L; this process of finding the most suitable set of parameters W that will provide us with the minimum loss is called Optimization.
+                    </p>
+                    <h3>
+                        Optimization
+                    </h3>
+                    <p>
+                        As explained in [<a href="#References">2</a>], we can employ the three elementary strategies given below as simple optimization:
+                        <ul>
+                            <li>
+                                Random search<br>
+                                As the name suggests, we simply try out several random parameters W and compare the best one with each other and iteratively refine them over time to get the lowest loss. An analogy would be a drunk man randomly wandering around in a hilly terrain trying to reach the bottom. This method is both time-consuming and highly inefficient.
+                            </li>
+                            <li>
+                                Random local search<br>
+                                We start with any random W and generate random displacements dW to it and update only if the loss W + dW is lower than W. The analogy we can use would be a hiker trying to reach the bottom of the hilly terrain by proceeding to take a step in any direction as long as it leads down.
+                            </li>
+                            <li>
+                                Along the Gradient<br>
+                                Here, we compute the best direction in which we should change our W weight vector such that it is mathematically guaranteed to be the direction of steepest descent. We compute the slope (gradient), which is the first-order derivative of the function at the current point, and move in the opposite direction of the slope by the computed amount. For our analogy, the hiker will traverse the direction which he feels is the steepest descent.
+                            </li>
+                        </ul>
+                    </p>
+                    <p>
+                        Note: The gradient only tells us the direction which has the steepest decrease of the loss function, but it does not tell us how far along the direction the lowest point is located. Choosing the step size, also known as the learning rate, is an important hyper-parameter setting in training a neural network. Choosing a small step size will lead to consistent but slow progress, whereas choosing a large step size may cause us to overstep as depicted in the illustration given below.
+                    </p>
+                    <figure>
+                        <img src="Images/gd_overstepping.jpg" alt="Overstepping" style="width:300px; border-radius: 20px;"> 
+                        <figcaption>
+                            Fig.11 - Visualizing the effect of step size. We start at some particular spot W and evaluate the negative of the gradient (the white arrow) which tells us the direction of the steepest decrease in the loss function (Source: <a href="https://cs231n.github.io/optimization-1/" target="blank">Optimization, CS231n</a>)
+                        </figcaption>
+                    </figure>
+                    <h3>
+                        Types of Gradient Descent Algorithms
+                    </h3>
+                    <p>
+                        We will be looking deeper into three methods of gradient descent optimization algorithm used such as Mini-batch gradient descent and its two extreme cases, the Stochastic Gradient Descent, and Batch Gradient Descent. With what we found from [<a href="#References">4</a>], they can be summarized as follows:
+                    </p>
+                    <ul>
+                        <li>
+                            Mini-batch Gradient Descent<br>
+                            In cases where the training data available is exceptionally large, we divide the training data into batches and compute the gradient over them instead of the whole. This method is computationally efficient and easily fits in memory. It also produces a more stable gradient descent convergence. But this stable error gradient may lead it into a local minimum instead of the global minima, though the oscillations will help get out of them; also the segmented training set size shouldn't be too large to process in memory.
+                        </li>
+                        <li>
+                            Stochastic Gradient Descent (SGD)<br>
+                            SGD algorithm updates the parameters after evaluation of the loss function for each example instead of a mini-batch as given in the earlier method. If the training set contains n examples then the parameters are updated n times, i.e. one time after every single example is passed through. Due to the frequent updates, the steps taken towards the minima of the loss function will have oscillations. This helps get the loss function out of the local minima; though the same will also cause it to be noisy and can point the gradient descent in other directions and hence cause it to take longer to converge to global minima.
+                        </li>
+                        <li>
+                            Batch Gradient Descent (BGD)<br>
+                            In BGD the parameters are updated once after all the training examples have been evaluated. In this method, there are fewer oscillations and noisy steps are taken towards global minima since it updates parameters by computing the average of all training examples. It produces a more stable gradient descent convergence than the other two methods and is computationally much more efficient. But its lack of noisy steps can make it harder to get out of local minima.
+                        </li>
+                    </ul>
+                </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg1 div-->
+        <div class="bg2" id="References" style="border-top: 3px solid black;">
+            <div class="content-area">
+                <div class="wrapper">
+                    <h2>
+                        References
+                    </h2>
+                    <ol type="1">
+                        <li>
+                            Chen, J. (2020). An updated overview of recent gradient descent algorithms. John Chen. Retrieved 3 October 2020, from <a href="https://johnchenresearch.github.io/demon/" target="blank">https://johnchenresearch.github.io/demon/</a>.
+                        </li>
+                        <li>
+                            CS231n Convolutional Neural Networks for Visual Recognition. CS231n. (2020). Retrieved 3 October 2020, from <a href="https://cs231n.github.io/" target="blank">https://cs231n.github.io/</a>.
+                        </li>
+                        <li>
+                            Duchi, J., Hazan, E. and Singer, Y., 2011. Adaptive Subgradient Methods for Online Learning and Stochastic Optimization. Journal of Machine Learning Research, 12, pp.2121-2159.
+                        </li>
+                        <li>
+                            Kapil, D., 2020. Stochastic Vs Batch Gradient Descent. [online] Medium. Available at: <a href="https://medium.com/@divakar_239/stochastic-vs-batch-gradient-descent-8820568eada1" target="blank">https://medium.com/@divakar_239/stochastic-vs-batch-gradient-descent-8820568eada1</a> [Accessed 3 October 2020].
+                        </li>
+                        <li>
+                            Mallick, S. and Nayak, S., 2020. Number Of Parameters And Tensor Sizes In A Convolutional Neural Network (CNN). [online] Learn OpenCV. Available at: <a href="https://www.learnopencv.com/number-of-parameters-and-tensor-sizes-in-convolutional-neural-network/" target="blank">https://www.learnopencv.com/number-of-parameters-and-tensor-sizes-in-convolutional-neural-network/</a> [Accessed 3 October 2020].
+                        </li>
+                        <li>
+                            P. Kingma, D. and Ba, J., 2015. Adam: A Method for Stochastic Optimization. In: 3rd International Conference for Learning Representations. San Diego.
+                        </li>
+                        <li>
+                            Ruder, S., 2020. An Overview Of Gradient Descent Optimization Algorithms. [online] Sebastian Ruder. Available at: <a href="https://ruder.io/optimizing-gradient-descent/" target="blank">https://ruder.io/optimizing-gradient-descent/</a> [Accessed 3 October 2020].
+                        </li>
+                        <li>
+                            Stewart, M., 2020. Neural Network Optimization. [online] Medium. Available at: <a href="https://towardsdatascience.com/neural-network-optimization-7ca72d4db3e0" target="blank">https://towardsdatascience.com/neural-network-optimization-7ca72d4db3e0</a> [Accessed 3 October 2020].
+                        </li>
+                        <li>
+                            Sun, S., Cao, Z., Zhu, H. and Zhao, J., 2020. A Survey of Optimization Methods From a Machine Learning Perspective. IEEE Transactions on Cybernetics, 50(8), pp.3668-3681. <a href="https://doi.org/10.1109/tcyb.2019.2950779" target="blank">https://doi.org/10.1109/tcyb.2019.2950779</a>.
+                        </li>
+                        <li>
+                            Wright, S., 2020. Optimization Methods For Machine Learning. Presentation, <a href="http://helper.ipam.ucla.edu/publications/elws1/elws1_13686.pdf" target="blank">http://helper.ipam.ucla.edu/publications/elws1/elws1_13686.pdf</a>.
+                        </li>
+                        <li>
+                            Zeiler, M., 2020. ADADELTA: An Adaptive Learning Rate Method. [online] Available at: <a href="https://arxiv.org/abs/1212.5701" target="blank">https://arxiv.org/abs/1212.5701</a> [Accessed 29 October 2020].
+                        </li>
+                    </ol>
+                 </div><!--.wrapper div-->
+            </div><!--.content-area div-->
+        </div><!--.bg2 div-->
+        <div class="bg3">
+            <div class="details">
+                <div class="wrapper">
+                    <div class="heading">
+                        <h2>
+                            Guided By:
+                        </h2>
+                    </div><!--.heading div-->
+                    <div class="photo">
+                        <a href="https://www.niser.ac.in/users/smishra" target="blank"><img src="Images/mishra.jpg" alt="Subhankar Mishra"></a>
+                        <p><a href="https://www.niser.ac.in/users/smishra" target="blank">Subhankar Mishra</a></p>
+                    </div><!--.photo div-->
+                </div><!--.wrapper div-->
+            </div><!--.details div-->
+        </div><!--.bg3 div-->
+        <div class="bg4">
+            <div class="details">
+                <div class="wrapper">
+                    <div class="heading">
+                        <h2>
+                            Contributors:
+                        </h2>
+                    </div>  <!--.heading div-->
+                    <div class="photo">
+                        <a href="https://github.com/CodexForster" target="blank"><img src="Images/Danush.jpeg" alt="Danush Shekar"></a>
+                        <p><a href="https://github.com/CodexForster" target="blank">Danush Shekar</a></p>
+                    </div><!--.photo div-->
+                    <div class="photo">
+                        <a href="https://github.com/harisankarkr1998" target="blank"><img src="Images/Hari.jpg" alt="Harisankar K R"></a>
+                        <p><a href="https://github.com/harisankarkr1998" target="blank">Harisankar K R</a></p>
+                    </div><!--.photo div-->
+                </div><!--.wrapper div-->
+            </div><!--.details div-->
+        </div><!--.bg4 div-->
+        <div class="bg3" style="background: black; padding: 10px; border-top: none;">
+            <div class="details" style="padding: 0px;">
+                <div class="wrapper">
+                    <p style="color: white;">Project submitted in partial fulfilment of the requirements for the CS460 Course, NISER.</p>
+                </div><!--.wrapper div-->
+            </div><!--.details div-->
+        </div><!--.bg3 div-->
+    </body>
+</html>

@@ -1,0 +1,175 @@
+/* 
+Project Name: Introducing Terms of Higher Moments in Heavy-Ball Optimization
+Author: Danush Shekar and Harisankar K R
+*/
+
+
+/*----------------------------------------------------------------------------- 
+01=BASE   
+-----------------------------------------------------------------------------*/
+
+/* Box Model Hack */
+* {
+     -moz-box-sizing: border-box; /* Firexfox */
+     -webkit-box-sizing: border-box; /* Safari/Chrome/iOS/Android */
+     box-sizing: border-box; /* IE */
+}
+
+.clear {
+	clear: both;
+}
+
+body {
+	color: #000000;
+	font-family: 'Open Sans', sans-serif;
+}
+
+a{
+	text-decoration: none;
+	color: none;
+}
+
+pre .latex {
+	padding: 10px;
+	border:2px solid black;
+	font-weight: 700;
+	font-size: larger;
+	display: block;
+	margin: 0 auto 0 auto;
+}
+
+pre2 .latex{
+	margin-bottom: -7px;
+}
+
+pre3 .latex{
+	margin-bottom: -3px;
+}
+
+pre4 .latex{
+
+}
+
+
+figcaption {
+	font-style: italic;
+	padding: 2px;
+	text-align: center;
+  }
+
+
+
+/*----------------------------------------------------------------------------- 
+02=LAYOUT  
+-----------------------------------------------------------------------------*/
+
+nav{
+	z-index: 12;
+	top: 0px;
+	width: 100%;
+	position: fixed;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	height: 80px;
+	background-color: black;
+}
+
+.topic h1{
+	font-size: 30px;
+	color: white;
+}
+
+.content-area-top{
+	width: 70%;
+	top: 50px;
+	padding-bottom: 50px;
+	position: relative;
+	margin: 0 auto 0 auto;
+}
+
+.content-area{
+	width: 70%;
+	position: relative;
+	margin: 0 auto 0 auto;
+}
+
+.wrapper {
+	margin: 0 auto 0 auto;
+	width: 90%;
+}
+
+.bg1{
+	padding-top: 50px;
+	padding-bottom: 50px;
+	background: white;
+}
+
+.bg2{
+	padding-top: 50px;
+	padding-bottom: 50px;
+	background: #eeeeee;
+}
+
+.bg3{
+	border-top: 3px solid black;
+}
+
+.bg4{
+	border-top: 3px solid black;
+	background: #eeeeee;
+}
+
+
+.details{
+	margin: 0 auto 0 auto;
+	position: relative;
+	width: 70%;;
+	padding: 25px;
+	display: flex;
+}
+
+.photo{
+	padding-left: 50px;
+	width: 30%;
+	float: left;
+}
+
+
+/*----------------------------------------------------------------------------- 
+03=MAIN  
+-----------------------------------------------------------------------------*/
+.topic h1{
+	font-family: 'Quicksand', sans-serif;
+}
+
+figure img{
+	margin: 0 auto 0 auto;
+	display: block;
+	padding: 10px;
+}
+
+.details p{
+	font-size: 20px;
+}
+
+.details h2{
+	font-size: 30px;
+	padding-bottom: 10px;
+	padding-left: 30px;
+}
+
+.details img {
+	width: 150px;
+	border-radius: 300px;
+}
+
+
+
+
+
+
+
+
+
+
